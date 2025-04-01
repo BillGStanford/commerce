@@ -47,7 +47,14 @@ const Footer = () => {
                 <a href="/" className="text-gray-400 hover:text-white transition-colors">Featured Products</a>
               </li>
               <li>
-                <a href="#report-a-seller" className="text-gray-400 hover:text-white transition-colors">Report a Seller</a> 
+              <a 
+              href="https://forms.gle/sMHArfNMAffkkmj26" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn-primary"
+            >
+              Report A Seller
+            </a>
               </li>
               <li>
                 <Link to="/cart" className="text-gray-400 hover:text-white transition-colors">Cart</Link>
