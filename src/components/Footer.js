@@ -44,7 +44,7 @@ const Footer = () => {
                 <Link to="/" className="text-gray-400 hover:text-white transition-colors">Home</Link>
               </li>
               <li>
-                <a href="/" className="text-gray-400 hover:text-white transition-colors">Featured Products</a>
+                <a href="#featured" className="text-gray-400 hover:text-white transition-colors">Featured Products</a>
               </li>
               <li>
                 <a href="https://forms.gle/eLLf4APCXMnEi6XY8" target='_blank' className="text-gray-400 hover:text-white transition-colors">Report a Seller</a> 
