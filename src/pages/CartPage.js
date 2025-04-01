@@ -6,6 +6,32 @@ const CartPage = () => {
   const navigate = useNavigate();
   const { cart, cartTotal, removeFromCart, updateQuantity, clearCart } = useContext(CartContext);
 
+  // Helper function to render gender badge
+  const renderGenderBadge = (gender) => {
+    if (!gender) return null;
+    
+    let badgeColor = '';
+    switch (gender) {
+      case 'Men':
+        badgeColor = 'bg-blue-100 text-blue-800';
+        break;
+      case 'Women':
+        badgeColor = 'bg-pink-100 text-pink-800';
+        break;
+      case 'Unisex':
+        badgeColor = 'bg-purple-100 text-purple-800';
+        break;
+      default:
+        return null;
+    }
+    
+    return (
+      <span className={`inline-block ${badgeColor} rounded-full px-2 py-1 text-xs font-semibold mr-2`}>
+        {gender}
+      </span>
+    );
+  };
+
   if (cart.length === 0) {
     return (
       <div className="container-custom py-16 text-center">
@@ -32,8 +58,8 @@ const CartPage = () => {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <ul className="divide-y divide-gray-200">
-              {cart.map(item => (
-                <li key={item.id} className="p-4 sm:p-6">
+              {cart.map((item, index) => (
+                <li key={`${item.id}-${item.selectedSize || 'default'}-${index}`} className="p-4 sm:p-6">
                   <div className="flex flex-col sm:flex-row">
                     <div className="sm:w-24 sm:h-24 h-20 w-20 flex-shrink-0 overflow-hidden rounded-md mb-4 sm:mb-0">
                       <img 
@@ -51,34 +77,49 @@ const CartPage = () => {
                               {item.name}
                             </Link>
                           </h3>
-                          <p className="mt-1 text-sm text-gray-500">{item.category}</p>
+                          <div className="mt-1 flex items-center">
+                            {renderGenderBadge(item.gender)}
+                            <span className="text-sm text-gray-500">{item.category}</span>
+                          </div>
+                          {item.selectedSize && (
+                            <p className="mt-1 text-sm text-gray-700">
+                              <span className="font-medium">Size:</span> {item.selectedSize}
+                            </p>
+                          )}
                         </div>
                         <p className="text-lg font-medium text-gray-900">${item.price.toFixed(2)}</p>
                       </div>
 
                       <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center border rounded-md">
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
-                            className="px-2 py-1 text-gray-600 hover:text-gray-900 disabled:opacity-50"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                          <span className="px-4 py-1 text-gray-900">{item.quantity}</span>
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="px-2 py-1 text-gray-600 hover:text-gray-900"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                            </svg>
-                          </button>
+                        <div className="flex flex-col">
+                          <div className="flex items-center border rounded-md">
+                            <button 
+                              onClick={() => updateQuantity(item.id, item.quantity - 1, item.selectedSize)}
+                              disabled={item.quantity <= 1}
+                              className="px-2 py-1 text-gray-600 hover:text-gray-900 disabled:opacity-50"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                            <span className="px-4 py-1 text-gray-900">{item.quantity}</span>
+                            <button 
+                              onClick={() => updateQuantity(item.id, item.quantity + 1, item.selectedSize)}
+                              className="px-2 py-1 text-gray-600 hover:text-gray-900"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          </div>
+                          {item.exceededLimit && (
+                            <span className="text-xs text-red-600 mt-1">
+                              Maximum available quantity reached
+                            </span>
+                          )}
                         </div>
                         <button 
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(item.id, item.selectedSize)}
                           className="text-red-600 hover:text-red-800"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

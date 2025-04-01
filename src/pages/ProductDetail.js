@@ -10,6 +10,8 @@ const ProductDetail = ({ products }) => {
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [quantityError, setQuantityError] = useState(null);
 
   useEffect(() => {
     // Find the product based on the ID
@@ -22,9 +24,25 @@ const ProductDetail = ({ products }) => {
     
     setProduct(foundProduct);
     
-    // Find related products (same category)
+    // Set default selected size if sizes are available
+    if (foundProduct.sizes && foundProduct.sizes.length > 0) {
+      setSelectedSize(foundProduct.sizes[0]);
+    }
+    
+    // Find related products (same category and gender if applicable)
     const related = products
-      .filter(p => p.category === foundProduct.category && p.id !== foundProduct.id)
+      .filter(p => {
+        // Match category
+        const categoryMatch = p.category === foundProduct.category;
+        
+        // If both products have gender specified, match on gender too
+        const genderMatch = 
+          (!foundProduct.gender || !p.gender) || // No gender specified for one or both
+          p.gender === foundProduct.gender || // Same gender
+          p.gender === 'Unisex' || foundProduct.gender === 'Unisex'; // One is unisex
+        
+        return categoryMatch && genderMatch && p.id !== foundProduct.id;
+      })
       .slice(0, 4);
     
     setRelatedProducts(related);
@@ -39,10 +57,16 @@ const ProductDetail = ({ products }) => {
   }
 
   const handleAddToCart = () => {
-    // Add product with the selected quantity
-    for (let i = 0; i < quantity; i++) {
-      addToCart(product);
+    // Check if quantity exceeds stock limit
+    const stockLimit = product.stockLimit || Infinity;
+    
+    if (quantity > stockLimit) {
+      setQuantityError(`Sorry, only ${stockLimit} items available in stock.`);
+      return;
     }
+    
+    // Add product with the selected quantity and size
+    addToCart(product, quantity, selectedSize);
     navigate('/cart');
   };
 
@@ -50,8 +74,52 @@ const ProductDetail = ({ products }) => {
     const value = parseInt(e.target.value);
     if (value > 0) {
       setQuantity(value);
+      
+      // Clear error message if quantity is valid
+      const stockLimit = product.stockLimit || Infinity;
+      if (value <= stockLimit) {
+        setQuantityError(null);
+      } else {
+        setQuantityError(`Sorry, only ${stockLimit} items available in stock.`);
+      }
     }
   };
+
+  const handleSizeChange = (size) => {
+    setSelectedSize(size);
+  };
+
+  // Helper function to render gender badge with proper styling
+  const renderGenderBadge = () => {
+    if (!product.gender) return null;
+    
+    let badgeColor = '';
+    switch (product.gender) {
+      case 'Men':
+        badgeColor = 'bg-blue-100 text-blue-800';
+        break;
+      case 'Women':
+        badgeColor = 'bg-pink-100 text-pink-800';
+        break;
+      case 'Unisex':
+        badgeColor = 'bg-purple-100 text-purple-800';
+        break;
+      default:
+        return null;
+    }
+    
+    return (
+      <span className={`inline-block ${badgeColor} rounded-full px-3 py-1 text-sm font-semibold mr-2`}>
+        {product.gender}
+      </span>
+    );
+  };
+
+  // Check if product requires size selection
+  const needsSizeSelection = product.sizes && product.sizes.length > 0;
+  
+  // Check if product has stock limit
+  const hasStockLimit = product.stockLimit !== undefined;
 
   return (
     <div className="bg-white">
@@ -82,11 +150,13 @@ const ProductDetail = ({ products }) => {
               alt={product.name} 
               className="w-full h-auto object-cover"
             />
-            {product.featured && (
-              <div className="absolute top-4 right-4 bg-secondary text-gray-900 px-3 py-1 text-sm font-semibold">
-                Featured
-              </div>
-            )}
+            <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+              {product.featured && (
+                <div className="bg-secondary text-gray-900 px-3 py-1 text-sm font-semibold">
+                  Featured
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Product Info */}
@@ -101,10 +171,47 @@ const ProductDetail = ({ products }) => {
             
             <div className="mb-6">
               <h2 className="text-lg font-semibold mb-2">Category</h2>
-              <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">
-                {product.category}
-              </span>
+              <div className="flex flex-wrap items-center">
+                {renderGenderBadge()}
+                <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">
+                  {product.category}
+                </span>
+              </div>
             </div>
+
+            {hasStockLimit && (
+              <div className="mb-6">
+                <span className="text-sm font-medium text-gray-700">
+                  {product.stockLimit > 10 ? 
+                    `In Stock (${product.stockLimit} available)` : 
+                    product.stockLimit > 0 ? 
+                      `Only ${product.stockLimit} left in stock!` : 
+                      "Out of Stock"}
+                </span>
+              </div>
+            )}
+
+            {/* Size Selection */}
+            {needsSizeSelection && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-2">Select Size</h2>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map(size => (
+                    <button
+                      key={size}
+                      onClick={() => handleSizeChange(size)}
+                      className={`px-4 py-2 border rounded ${
+                        selectedSize === size 
+                          ? 'border-primary bg-primary text-white' 
+                          : 'border-gray-300 hover:border-primary'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-6">
               <h2 className="text-lg font-semibold mb-2">Seller Information</h2>
@@ -112,27 +219,40 @@ const ProductDetail = ({ products }) => {
               <p className="text-gray-700"><span className="font-medium">Contact via:</span> {product.seller.method}</p>
             </div>
             
-            <div className="mb-8 flex items-center space-x-4">
-              <div className="w-24">
-                <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  id="quantity"
-                  name="quantity"
-                  min="1"
-                  value={quantity}
-                  onChange={handleQuantityChange}
-                  className="input py-1"
-                />
+            <div className="mb-8">
+              <div className="flex items-center space-x-4">
+                <div className="w-24">
+                  <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    min="1"
+                    max={product.stockLimit}
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                    className="input py-1"
+                  />
+                </div>
+                <button 
+                  onClick={handleAddToCart} 
+                  className="btn-primary py-3 px-8 text-base mt-auto"
+                  disabled={product.stockLimit === 0 || (needsSizeSelection && !selectedSize)}
+                >
+                  Add to Cart
+                </button>
               </div>
-              <button 
-                onClick={handleAddToCart} 
-                className="btn-primary py-3 px-8 text-base mt-auto"
-              >
-                Add to Cart
-              </button>
+              {quantityError && (
+                <p className="text-red-500 text-sm mt-2">{quantityError}</p>
+              )}
+              {needsSizeSelection && !selectedSize && (
+                <p className="text-red-500 text-sm mt-2">Please select a size</p>
+              )}
+              {product.stockLimit === 0 && (
+                <p className="text-red-500 text-sm mt-2">This item is currently out of stock</p>
+              )}
             </div>
           </div>
         </div>

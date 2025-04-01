@@ -1,13 +1,16 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useContext, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import CartContext from '../context/CartContext';
-import { Search } from 'lucide-react';
+import { Search, ChevronDown } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ categories, products }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const { cart } = useContext(CartContext);
+  const navigate = useNavigate();
+  const dropdownRef = useRef(null);
   
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -25,12 +28,26 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropdownRef]);
+
   // Handle search submission
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    // Navigate to search results page or filter items
-    console.log('Search for:', searchQuery);
-    // Implementation would depend on your routing setup
+    if (searchQuery.trim()) {
+      // Navigate to home page with search query as state
+      navigate('/', { state: { searchQuery } });
+      setSearchQuery('');
+    }
   };
 
   return (
@@ -47,18 +64,42 @@ const Navbar = () => {
             <span className="text-xl font-heading font-bold text-gray-900">NileMarket</span>
           </Link>
 
-
+          {/* Search Bar - Shown on all devices */}
+          <div className="hidden md:flex flex-1 max-w-md mx-6">
+            <form onSubmit={handleSearchSubmit} className="w-full relative">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full py-2 px-4 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <button 
+                type="submit" 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-primary"
+              >
+                <Search size={18} />
+              </button>
+            </form>
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             <Link to="/" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Home
             </Link>
+            
+            {/* Categories Dropdown */}
+            <a 
+              href="#categories" 
+              className="block text-gray-700 hover:text-primary font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Categories
+            </a>
+            
             <a href="#featured" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Featured
-            </a>
-            <a href="#categories" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Categories
             </a>
             <a href="https://forms.gle/iEsu9KcAkTGZ7NGx8" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Sell Item
@@ -108,8 +149,23 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-2 space-y-4">
-
+          <div className="md:hidden mt-4 pb-4 space-y-4">
+            {/* Mobile Search */}
+            <form onSubmit={handleSearchSubmit} className="relative mb-4">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full py-2 px-4 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <button 
+                type="submit" 
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-primary"
+              >
+                <Search size={18} />
+              </button>
+            </form>
             
             <Link 
               to="/" 
@@ -118,19 +174,22 @@ const Navbar = () => {
             >
               Home
             </Link>
-            <a 
-              href="#featured" 
-              className="block text-gray-700 hover:text-primary font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Featured
-            </a>
+            
+            {/* Mobile Categories */}
             <a 
               href="#categories" 
               className="block text-gray-700 hover:text-primary font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Categories
+            </a>
+            
+            <a 
+              href="#featured" 
+              className="block text-gray-700 hover:text-primary font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Featured
             </a>
             <a 
               href="https://forms.gle/iEsu9KcAkTGZ7NGx8" 

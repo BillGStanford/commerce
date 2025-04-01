@@ -10,17 +10,17 @@ const CheckoutPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Toggle contact method selection
-  const toggleContactMethod = (productId, method) => {
+  const toggleContactMethod = (itemKey, method) => {
     setSelectedContactMethods(prev => ({
       ...prev,
-      [productId]: method
+      [itemKey]: method
     }));
     
     // Clear error for this product if exists
-    if (errors[`contact_${productId}`]) {
+    if (errors[`contact_${itemKey}`]) {
       setErrors(prev => {
         const newErrors = {...prev};
-        delete newErrors[`contact_${productId}`];
+        delete newErrors[`contact_${itemKey}`];
         return newErrors;
       });
     }
@@ -32,8 +32,9 @@ const CheckoutPage = () => {
     
     // Check if all products have a contact method selected
     cart.forEach(item => {
-      if (!selectedContactMethods[item.id]) {
-        newErrors[`contact_${item.id}`] = 'Please select a contact method';
+      const itemKey = getItemKey(item);
+      if (!selectedContactMethods[itemKey]) {
+        newErrors[`contact_${itemKey}`] = 'Please select a contact method';
       }
     });
     
@@ -56,6 +57,11 @@ const CheckoutPage = () => {
     navigate('/');
   };
 
+  // Generate a unique key for cart items (considering size)
+  const getItemKey = (item) => {
+    return `${item.id}-${item.selectedSize || 'default'}`;
+  };
+
   // Parse contact methods from seller data
   const parseContactMethods = (seller) => {
     // If the new contactDetails object exists, use its keys
@@ -76,6 +82,32 @@ const CheckoutPage = () => {
     
     // Fallback to the original contact field
     return seller.contact;
+  };
+
+  // Helper function to render gender badge
+  const renderGenderBadge = (gender) => {
+    if (!gender) return null;
+    
+    let badgeColor = '';
+    switch (gender) {
+      case 'Men':
+        badgeColor = 'bg-blue-100 text-blue-800';
+        break;
+      case 'Women':
+        badgeColor = 'bg-pink-100 text-pink-800';
+        break;
+      case 'Unisex':
+        badgeColor = 'bg-purple-100 text-purple-800';
+        break;
+      default:
+        return null;
+    }
+    
+    return (
+      <span className={`inline-block ${badgeColor} rounded-full px-2 py-1 text-xs font-semibold mr-2`}>
+        {gender}
+      </span>
+    );
   };
 
   if (cart.length === 0) {
@@ -120,13 +152,13 @@ const CheckoutPage = () => {
             <h4 className="font-semibold text-lg text-gray-800">Seller Contact Information:</h4>
             <ul className="mt-2 space-y-6">
               {cart.map(item => {
-                // Get all available contact methods
+                const itemKey = getItemKey(item);
                 const methodArray = parseContactMethods(item.seller);
-                const selectedMethod = selectedContactMethods[item.id];
+                const selectedMethod = selectedContactMethods[itemKey];
                 const contactInfo = getContactInfo(item.seller, selectedMethod);
                 
                 return (
-                  <li key={item.id} className="border-b pb-6">
+                  <li key={itemKey} className="border-b pb-6">
                     <div className="flex items-center mb-4">
                       <img 
                         src={item.image} 
@@ -135,7 +167,14 @@ const CheckoutPage = () => {
                       />
                       <div className="ml-4">
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-gray-600">Seller: {item.seller.name}</p>
+                        <div className="flex items-center mt-1">
+                          {renderGenderBadge(item.gender)}
+                          <p className="text-gray-600">Seller: {item.seller.name}</p>
+                        </div>
+                        {item.selectedSize && (
+                          <p className="text-gray-600">Size: {item.selectedSize}</p>
+                        )}
+                        <p className="text-gray-600">Quantity: {item.quantity}</p>
                       </div>
                     </div>
                     
@@ -161,7 +200,7 @@ const CheckoutPage = () => {
           </div>
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-yellow-800 font-medium">
-              Please contact the sellers directly using the contact details above to arrange payment and than delivery or pickup.
+              Please contact the sellers directly using the contact details above to arrange payment and delivery or pickup.
             </p>
           </div>
         </div>
@@ -180,26 +219,36 @@ const CheckoutPage = () => {
             <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
               <h2 className="text-xl font-semibold mb-4 pb-2 border-b">Order Summary</h2>
               <div className="space-y-4 mb-6">
-                {cart.map(item => (
-                  <div key={item.id} className="flex justify-between items-center py-2">
-                    <div className="flex items-center">
-                      <div className="w-16 h-16 mr-4 overflow-hidden rounded-md">
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover"
-                        />
+                {cart.map(item => {
+                  const itemKey = getItemKey(item);
+                  return (
+                    <div key={itemKey} className="flex justify-between items-center py-2">
+                      <div className="flex items-center">
+                        <div className="w-16 h-16 mr-4 overflow-hidden rounded-md">
+                          <img 
+                            src={item.image} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{item.name}</h3>
+                          <div className="flex items-center mt-1">
+                            {renderGenderBadge(item.gender)}
+                            <span className="text-gray-600 text-sm">{item.category}</span>
+                          </div>
+                          {item.selectedSize && (
+                            <p className="text-gray-600 text-sm">Size: {item.selectedSize}</p>
+                          )}
+                          <p className="text-gray-600 text-sm">Qty: {item.quantity}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-gray-600 text-sm">Qty: {item.quantity}</p>
+                      <div className="text-right">
+                        <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               
               <div className="border-t pt-4">
@@ -228,11 +277,11 @@ const CheckoutPage = () => {
               </p>
               
               {cart.map(item => {
-                // Get all available contact methods
+                const itemKey = getItemKey(item);
                 const methodArray = parseContactMethods(item.seller);
                 
                 return (
-                  <div key={item.id} className="mb-6 pb-6 border-b">
+                  <div key={itemKey} className="mb-6 pb-6 border-b">
                     <div className="flex items-center mb-4">
                       <img 
                         src={item.image} 
@@ -241,7 +290,14 @@ const CheckoutPage = () => {
                       />
                       <div>
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-gray-600 text-sm">Seller: {item.seller.name}</p>
+                        <div className="flex items-center mt-1">
+                          {renderGenderBadge(item.gender)}
+                          <p className="text-gray-600 text-sm">Seller: {item.seller.name}</p>
+                        </div>
+                        {item.selectedSize && (
+                          <p className="text-gray-600 text-sm">Size: {item.selectedSize}</p>
+                        )}
+                        <p className="text-gray-600 text-sm">Quantity: {item.quantity}</p>
                       </div>
                     </div>
                     
@@ -252,9 +308,9 @@ const CheckoutPage = () => {
                           <button
                             key={index}
                             type="button"
-                            onClick={() => toggleContactMethod(item.id, method)}
+                            onClick={() => toggleContactMethod(itemKey, method)}
                             className={`px-4 py-2 rounded-full border ${
-                              selectedContactMethods[item.id] === method
+                              selectedContactMethods[itemKey] === method
                                 ? 'bg-primary text-white border-primary'
                                 : 'border-gray-300 hover:border-primary'
                             }`}
@@ -263,8 +319,8 @@ const CheckoutPage = () => {
                           </button>
                         ))}
                       </div>
-                      {errors[`contact_${item.id}`] && (
-                        <p className="text-red-500 text-sm mt-1">{errors[`contact_${item.id}`]}</p>
+                      {errors[`contact_${itemKey}`] && (
+                        <p className="text-red-500 text-sm mt-1">{errors[`contact_${itemKey}`]}</p>
                       )}
                     </div>
                   </div>
@@ -273,7 +329,7 @@ const CheckoutPage = () => {
               
               <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
                 <p className="text-blue-800">
-                  <span className="font-semibold">Note:</span> Once you complete your purchase, you'll receive the seller's contact information to arrange payment and than delivery or pickup directly with them.
+                  <span className="font-semibold">Note:</span> Once you complete your purchase, you'll receive the seller's contact information to arrange payment and delivery or pickup directly with them.
                 </p>
               </div>
               
