@@ -88,7 +88,13 @@ const Navbar = ({ categories, products }) => {
             <Link to="/" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Home
             </Link>
-            
+            <a 
+              href="#featured" 
+              className="block text-gray-700 hover:text-primary font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Featured
+            </a>
             {/* Categories Dropdown */}
             <a 
               href="#categories" 
@@ -96,10 +102,6 @@ const Navbar = ({ categories, products }) => {
               onClick={() => setIsMenuOpen(false)}
             >
               Categories
-            </a>
-            
-            <a href="#featured" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Featured
             </a>
             <a href="https://forms.gle/iEsu9KcAkTGZ7NGx8" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Sell Item
@@ -176,14 +178,7 @@ const Navbar = ({ categories, products }) => {
             </Link>
             
             {/* Mobile Categories */}
-            <a 
-              href="#categories" 
-              className="block text-gray-700 hover:text-primary font-medium transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Categories
-            </a>
-            
+
             <a 
               href="#featured" 
               className="block text-gray-700 hover:text-primary font-medium transition-colors"
@@ -191,6 +186,15 @@ const Navbar = ({ categories, products }) => {
             >
               Featured
             </a>
+
+            <a 
+              href="#categories" 
+              className="block text-gray-700 hover:text-primary font-medium transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Categories
+            </a>
+          
             <a 
               href="https://forms.gle/iEsu9KcAkTGZ7NGx8" 
               target="_blank" 
