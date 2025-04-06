@@ -1,10 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import CartContext from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
 
 const ProductDetail = ({ products }) => {
-  const { id } = useParams();
+  const { id, slug } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
   const [quantity, setQuantity] = useState(1);
@@ -12,13 +13,38 @@ const ProductDetail = ({ products }) => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [selectedSize, setSelectedSize] = useState(null);
   const [quantityError, setQuantityError] = useState(null);
+  const [currentUrl, setCurrentUrl] = useState('');
+
+  // Helper function to create URL-friendly slug from product name
+  const createSlug = (text) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-')     // Replace spaces with hyphens
+      .replace(/-+/g, '-')      // Remove consecutive hyphens
+      .trim();                  // Trim leading/trailing spaces
+  };
 
   useEffect(() => {
+    // Store the current URL for Open Graph tags
+    setCurrentUrl(window.location.href);
+    
     // Find the product based on the ID
     const foundProduct = products.find(p => p.id === parseInt(id));
     
     if (!foundProduct) {
       navigate('/');
+      return;
+    }
+    
+    // If we have a slug parameter but it doesn't match the product's slug, redirect
+    if (!slug) {
+      // No slug in URL, redirect to include the slug
+      navigate(`/product/${foundProduct.id}/${createSlug(foundProduct.name)}`, { replace: true });
+      return;
+    } else if (slug !== createSlug(foundProduct.name)) {
+      // Incorrect slug, redirect to the correct one
+      navigate(`/product/${foundProduct.id}/${createSlug(foundProduct.name)}`, { replace: true });
       return;
     }
     
@@ -46,7 +72,7 @@ const ProductDetail = ({ products }) => {
       .slice(0, 4);
     
     setRelatedProducts(related);
-  }, [id, products, navigate]);
+  }, [id, slug, products, navigate]);
 
   if (!product) {
     return (
@@ -121,8 +147,34 @@ const ProductDetail = ({ products }) => {
   // Check if product has stock limit
   const hasStockLimit = product.stockLimit !== undefined;
 
+  // Create a short description for meta tags
+  const shortDescription = product.description.length > 150 
+    ? `${product.description.substring(0, 147)}...` 
+    : product.description;
+
   return (
     <div className="bg-white">
+      {/* Enhanced Helmet with Open Graph meta tags */}
+      <Helmet>
+        <title>Nile Marketplace - {product.name}</title>
+        <meta name="description" content={shortDescription} />
+        
+        {/* Open Graph meta tags for rich embeds */}
+        <meta property="og:title" content={product.name} />
+        <meta property="og:description" content={shortDescription} />
+        <meta property="og:image" content={product.image} />
+        <meta property="og:url" content={currentUrl} />
+        <meta property="og:type" content="product" />
+        <meta property="product:price:amount" content={product.price.toFixed(2)} />
+        <meta property="product:price:currency" content="USD" />
+        
+        {/* Twitter Card meta tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={product.name} />
+        <meta name="twitter:description" content={shortDescription} />
+        <meta name="twitter:image" content={product.image} />
+      </Helmet>
+
       <div className="container-custom py-12">
         {/* Breadcrumb */}
         <nav className="mb-8">
@@ -213,11 +265,13 @@ const ProductDetail = ({ products }) => {
               </div>
             )}
 
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2">Seller Information</h2>
-              <p className="text-gray-700 mb-1"><span className="font-medium">Seller:</span> {product.seller.name}</p>
-              <p className="text-gray-700"><span className="font-medium">Contact via:</span> {product.seller.method}</p>
-            </div>
+            {product.seller && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-2">Seller Information</h2>
+                <p className="text-gray-700 mb-1"><span className="font-medium">Seller:</span> {product.seller.name}</p>
+                <p className="text-gray-700"><span className="font-medium">Contact via:</span> {product.seller.method}</p>
+              </div>
+            )}
             
             <div className="mb-8">
               <div className="flex items-center space-x-4">
@@ -253,6 +307,20 @@ const ProductDetail = ({ products }) => {
               {product.stockLimit === 0 && (
                 <p className="text-red-500 text-sm mt-2">This item is currently out of stock</p>
               )}
+            </div>
+            
+            {/* Share Button section */}
+            <div className="mt-6 border-t pt-6">
+              <h2 className="text-lg font-semibold mb-3">Share This Product</h2>
+              <div className="flex space-x-3">
+                <button 
+                  onClick={() => navigator.clipboard.writeText(window.location.href)
+                    .then(() => alert('Product link copied to clipboard!'))}
+                  className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded transition"
+                >
+                  <span>Copy Link</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

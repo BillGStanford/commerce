@@ -11,6 +11,18 @@ const ProductCard = ({ product }) => {
     addToCart(product);
   };
 
+  // Helper function to create URL-friendly slug from product name
+  const createSlug = (text) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-')     // Replace spaces with hyphens
+      .replace(/-+/g, '-')      // Remove consecutive hyphens
+      .trim();                  // Trim leading/trailing spaces
+  };
+
+  const productSlug = createSlug(product.name);
+
   // Helper function to display gender badge
   const renderGenderBadge = () => {
     if (!product.gender) return null;
@@ -39,7 +51,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <div className="card group">
-      <Link to={`/product/${product.id}`} className="block">
+      <Link to={`/product/${product.id}/${productSlug}`} className="block">
         <div className="relative overflow-hidden h-64">
           <img 
             src={product.image} 

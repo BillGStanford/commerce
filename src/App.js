@@ -170,6 +170,9 @@ function App() {
                   />
                 } 
               />
+              {/* Add the new route with slug parameter */}
+              <Route path="/product/:id/:slug" element={<ProductDetail products={listingsData.products} />} />
+              {/* Keep the old route for backward compatibility */}
               <Route path="/product/:id" element={<ProductDetail products={listingsData.products} />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
