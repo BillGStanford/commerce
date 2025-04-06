@@ -25,21 +25,21 @@
     {
       "id": 2,
       "name": "Apple AirPods 2 with Charging Case - White",
-      "description": "Good AirPods you can wear anywhere anytime. Water free and long charge.",
-      "price": 56.99,
+      "description": "Good AirPods you can wear anywhere anytime. Water free and long charge. Clean, Fresh, & Ready for a Owner.",
+      "price": 26.99,
       "category": "Electronics",
       "image": "https://m.media-amazon.com/images/I/41XjE57VLvL.__AC_SX300_SY300_QL70_FMwebp_.jpg",
       "seller": {
         "name": "Natoli Lemessa",
-        "contact": "@audiotech_official",
-        "method": "Telegram or WhatsApp",
+        "contact": "240-733-8024",
+        "method": "Phone Number",
         "contactDetails": {
-          "Telegram": "@audiotech_official",
-          "Phone": "+1-555-234-5678"
+          "Telegram": "",
+          "Phone": "+1-240-733-8024"
         }
       },
       "featured": true,
-      "stockLimit": 8
+      "stockLimit": 1
     },
     {
       "id": 3,
